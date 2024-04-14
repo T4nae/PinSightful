@@ -10,6 +10,8 @@ import * as db from "../mongodb.js";
 
 await db.connectDB();
 export const app = express();
+const PORT = process.env.PORT;
+
 
 app.use(cors());
 app.use(bodyParser.json({ limit: "10mb" }));
@@ -254,6 +256,6 @@ app.get("/search", async (req, res) => {
     }
 });
 
-app.listen(5000, () => console.log("Server ready on port 5000."));
+app.listen(PORT, () => console.log(`Server ready on port ${PORT}.`));
 
 export default app;
