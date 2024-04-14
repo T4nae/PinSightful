@@ -1,0 +1,11 @@
+/backend/.env
+/next-ai-research-pinboard/.env.local
+
+/backend/node_modules
+/next-ai-research-pinboard/node_modules
+
+/next-ai-research-pinboard/.next
+/next-ai-research-pinboard/next-env.d.ts
+/next-ai-research-pinboard/*.tsbuildinfo
+
+.vercel
