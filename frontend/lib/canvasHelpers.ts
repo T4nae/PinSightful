@@ -22,7 +22,7 @@ export const drawPins = (
         let lines: string[] = [];
         if (pin.texts) {
             for (let i = 0; i < pin.texts.length; i++) {
-                let text: string = (pin.texts[i] as content).text!;
+                let text: string = (pin.texts[i] as content).text! || "";
                 let startIndex = 0;
                 let endIndex = maxCharactersPerLine;
 
