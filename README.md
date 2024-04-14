@@ -41,6 +41,7 @@ To set up the project, you need to install the dependencies first. Run the follo
 npm install
 
 ```
+
 Then, go to the `backend/` directory and rename the `.example.env` file to `.env`. Update the environment variables in the `.env` file with your own MongoDb URI.
 
 Then, go to the `frontend/` directory and rename the `.example.env.local` file to `.env.local`. Update the environment variables in the `.env.local` file with your own [Clerk]("https://clerk.com/") API keys and Backend URL after deploying the backend. (when deploying locally it is `http://localhost:5000`)
@@ -52,6 +53,8 @@ Then, you can start the server and the client-side application by running the fo
 npm start
 
 ```
+
+IMPORTANT: if you are using locally hosted ollama API on web hosted frontend you need to add frontend URL to OLLAMA_ORIGINS variable for more information visit [Ollama FAQ](https://github.com/ollama/ollama/blob/main/docs/faq.md#how-do-i-configure-ollama-server).
 
 ## Contributing
 
