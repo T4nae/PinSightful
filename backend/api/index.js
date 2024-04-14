@@ -6,18 +6,18 @@ import cors from "cors";
 import { config } from "dotenv";
 config();
 
-import * as db from "./mongodb.js";
+import * as db from "../mongodb.js";
 
 await db.connectDB();
-const app = express();
+export const app = express();
 
 app.use(cors());
 app.use(bodyParser.json({ limit: "10mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "10mb" }));
-app.use((req, res, next) => {
-    console.log(`${req.method} ${req.url}`);
-    next();
-});
+// app.use((req, res, next) => {
+//     console.log(`${req.method} ${req.url}`);
+//     next();
+// });
 
 app.post("/add-user", async (req, res) => {
     const data = req.body;
@@ -254,6 +254,6 @@ app.get("/search", async (req, res) => {
     }
 });
 
-app.listen(5000, () => {
-    console.log("Server is running on port 5000");
-});
+app.listen(5000, () => console.log("Server ready on port 5000."));
+
+export default app;
