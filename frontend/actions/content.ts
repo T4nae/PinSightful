@@ -17,7 +17,7 @@ export const addContent = async (content: Content) => {
     try {
         if (content.type === "text") {
             let res = await axios.post(
-                `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/add-text`,
+                `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${content.userId}/${content.pinBoardId}/${content.pinId}/texts`,
                 {
                     ...content,
                 },
@@ -30,7 +30,7 @@ export const addContent = async (content: Content) => {
             return res.data;
         } else if (content.type === "video" || content.type === "image") {
             let res = await axios.post(
-                `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/add-video`,
+                `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${content.userId}/${content.pinBoardId}/${content.pinId}/videos`,
                 {
                     ...content,
                 },
@@ -55,10 +55,10 @@ export const getContents = async (
     try {
         // get from both texts and videos then merge them together and return them as one array
         let resText = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/get-texts/${userId}/${pinboardId}/${pinId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/${pinboardId}/${pinId}/texts`
         );
         let resVideo = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/get-videos/${userId}/${pinboardId}/${pinId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/${pinboardId}/${pinId}/videos`
         );
 
         return {

@@ -1,6 +1,6 @@
 import axios from "axios";
 
-interface user {
+export interface user {
     userId: string;
     name: string;
     email: string;
@@ -11,7 +11,7 @@ interface user {
 export async function setUser(user: user) {
     try {
         const res = await axios.post(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/add-user`,
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${user.userId}`,
             {
                 ...user,
             }
@@ -24,10 +24,15 @@ export async function setUser(user: user) {
 
 export async function getUser(userId: string) {
     try {
-        const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/get-user/${userId}`
+        const res = await axios.get(
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}`,
+            {
+                params: {
+                    userId,
+                },
+            }
         );
-        return response.data;
+        return res.data;
     } catch (error) {
         console.error(error);
     }

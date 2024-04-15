@@ -12,7 +12,7 @@ export interface Pinboard {
 export async function addPinboard(pinboard: Pinboard) {
     try {
         let res = await axios.post(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/add-pinboard`,
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${pinboard.userId}/pinboard`,
             {
                 ...pinboard,
             },
@@ -31,7 +31,7 @@ export async function addPinboard(pinboard: Pinboard) {
 export async function getPinboard(userId: string, pinboardId: string) {
     try {
         let res = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/get-pinboard/${userId}/${pinboardId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/${pinboardId}`
         );
         return res.data;
     } catch (error) {
@@ -42,7 +42,7 @@ export async function getPinboard(userId: string, pinboardId: string) {
 export async function getPinboards(userId: string): Promise<Pinboard[] | null> {
     try {
         let res = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/get-pinboards/${userId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/pinboard`
         );
         return res.data;
     } catch (error) {
@@ -53,7 +53,7 @@ export async function getPinboards(userId: string): Promise<Pinboard[] | null> {
 export async function removePinboard(userId: string, pinboardId: string) {
     try {
         await axios.delete(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/delete-pinboard/${userId}/${pinboardId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/${pinboardId}`
         );
     } catch (error) {
         console.error(error);
@@ -67,7 +67,7 @@ export async function updatePinboard(
 ) {
     try {
         await axios.put(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/update-pinboard/${userId}/${pinboardId}`,
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/${pinboardId}`,
             {
                 ...pinboard,
             },

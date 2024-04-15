@@ -25,7 +25,7 @@ export interface pin {
 export const addPin = async (pin: pin) => {
     try {
         let res = await axios.post(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/add-pin`,
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${pin.userId}/${pin.pinBoardId}/pin`,
             {
                 ...pin,
             },
@@ -44,7 +44,7 @@ export const addPin = async (pin: pin) => {
 export const getPins = async (userId: string, pinboardId: string) => {
     try {
         let res = await axios.get(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/get-pins/${userId}/${pinboardId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${userId}/${pinboardId}/pin`
         );
         return res.data;
     } catch (error) {
@@ -55,7 +55,7 @@ export const getPins = async (userId: string, pinboardId: string) => {
 export const removePin = async (pin: pin) => {
     try {
         let res = await axios.delete(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/delete-pin/${pin.userId}/${pin.pinBoardId}/${pin.pinId}`
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${pin.userId}/${pin.pinBoardId}/${pin.pinId}`
         );
         return res.data;
     } catch (error) {
@@ -66,7 +66,7 @@ export const removePin = async (pin: pin) => {
 export const updatePin = async (pin: pin) => {
     try {
         let res = await axios.put(
-            `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/update-pin/${pin.userId}/${pin.pinBoardId}/${pin.pinId}`,
+            `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/${pin.userId}/${pin.pinBoardId}/${pin.pinId}`,
             {
                 ...pin,
             },

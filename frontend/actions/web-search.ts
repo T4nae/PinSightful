@@ -17,7 +17,7 @@ export async function webSearch(
     search: SearchRequest
 ): Promise<SearchResult[]> {
     const results = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_BASE_URL}/search`,
+        `${process.env.NEXT_PUBLIC_FRONTEND_BASE_URL}/api/search`,
         {
             params: {
                 query: search.query,
