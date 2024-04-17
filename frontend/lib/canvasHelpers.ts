@@ -6,10 +6,14 @@ export const drawPins = (
     zoomFactor: MutableRefObject<number>,
     ctx: CanvasRenderingContext2D,
     theme: string | undefined,
-    imagesLoaded: boolean,
-    setImagesLoaded: (value: boolean) => void,
     embeds: { embed: string; x: number; y: number }[],
-    addEmbed: (embed: string, x: number, y: number) => void
+    setEmbeds: (
+        embeds: {
+            embed: string;
+            x: number;
+            y: number;
+        }[]
+    ) => void
 ) => {
     if (!pins) return;
     pins.forEach((pin) => {
@@ -106,46 +110,46 @@ export const drawPins = (
         if (!pin.videos) return;
 
         for (let i = 0; i < pin.videos.length; i++) {
-            const img = new Image();
-            img.src = (pin.videos[i] as content).url!;
-            img.setAttribute("crossorigin", "anonymous");
-
-            if (!imagesLoaded)
-                img.onload = () => {
-                    ctx.drawImage(
-                        img,
-                        posX + 10 * zoomFactor.current,
-                        posY +
-                            16 * lines.length * zoomFactor.current +
-                            i * 158 * zoomFactor.current +
-                            10,
-                        280 * zoomFactor.current,
-                        158 * zoomFactor.current
-                    );
-                };
-            else
-                ctx.drawImage(
-                    img,
-                    posX + 10 * zoomFactor.current,
-                    posY +
-                        16 * lines.length * zoomFactor.current +
-                        i * 158 * zoomFactor.current +
-                        10,
-                    280 * zoomFactor.current,
-                    158 * zoomFactor.current
-                );
+            const img = (pin.videos[i] as content).image!;
+            ctx.drawImage(
+                img,
+                posX + 10 * zoomFactor.current,
+                posY +
+                    16 * lines.length * zoomFactor.current +
+                    i * 158 * zoomFactor.current +
+                    10,
+                280 * zoomFactor.current,
+                158 * zoomFactor.current
+            );
 
             if ((pin.videos[i] as content).type === "video") {
                 const redirect = (pin.videos[i] as content).redirect!;
-                if (!embeds.find((embed) => embed.embed === redirect))
-                    addEmbed(
-                        redirect,
-                        posX + 10 * zoomFactor.current,
+                var embed = embeds.find((embed) => embed.embed === redirect);
+                if (!embed) {
+                    setEmbeds([
+                        ...embeds,
+                        {
+                            embed: redirect,
+                            x: posX + 10 * zoomFactor.current,
+                            y:
+                                posY +
+                                16 * lines.length * zoomFactor.current +
+                                i * 158 * zoomFactor.current +
+                                10,
+                        },
+                    ]);
+                } else {
+                    // update the embed position with zoom factor
+                    embed.x = posX + 10 * zoomFactor.current;
+                    embed.y =
                         posY +
-                            16 * lines.length * zoomFactor.current +
-                            i * 158 * zoomFactor.current +
-                            10
-                    );
+                        16 * lines.length * zoomFactor.current +
+                        i * 158 * zoomFactor.current +
+                        10;
+
+                    setEmbeds(embeds);
+                }
+
                 // draw share icon on the corner of the video
                 ctx.beginPath();
                 ctx.moveTo(
@@ -175,7 +179,6 @@ export const drawPins = (
                 ctx.fill();
             }
         }
-        setImagesLoaded(true);
     });
 };
 

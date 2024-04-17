@@ -18,7 +18,7 @@ import {
     ContextMenuSubTrigger,
     ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { addPin, removePin } from "@/actions/pin";
+import { addPin, pin, removePin } from "@/actions/pin";
 import { ContextMenuSub } from "@radix-ui/react-context-menu";
 import { PinDialog } from "@/components/pinModal";
 import { usePin } from "@/hooks/usePin";
@@ -30,12 +30,14 @@ export function PinboardContextMenu({
     setReload,
     pinboardId,
     userId,
+    setDragPin,
 }: {
     children?: React.ReactNode;
     pointer: { x: number; y: number } | null;
     setReload: Dispatch<SetStateAction<boolean>>;
     pinboardId: string;
     userId: string;
+    setDragPin: Dispatch<SetStateAction<pin | null>>;
 }) {
     const { hoveredPin, overEmbed } = usePin();
 
@@ -195,6 +197,12 @@ export function PinboardContextMenu({
                             onClick={() => window.open(overEmbed!)}
                         >
                             Visit
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                            disabled={!hoveredPin}
+                            onClick={() => setDragPin(hoveredPin!)}
+                        >
+                            Move Pin
                         </ContextMenuItem>
                         <ContextMenuItem onClick={handleReload}>
                             Refresh

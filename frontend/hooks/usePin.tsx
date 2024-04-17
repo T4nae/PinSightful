@@ -1,7 +1,7 @@
 import { create } from "zustand";
 
 import { getContents } from "@/actions/content";
-import { getPins, pin } from "@/actions/pin";
+import { content, getPins, pin } from "@/actions/pin";
 import { getPinboard, Pinboard } from "@/actions/pinboard";
 
 interface usePin {
@@ -10,15 +10,16 @@ interface usePin {
     pointer: { x: number; y: number } | null;
     setPointer: (x: number, y: number) => void;
     setPins: (userId: string, pinboardId: string) => void;
-    addPin: (pin: pin) => void;
+    updateLoadedPin: (pin: pin) => void;
     hoveredPin: pin | null;
     setHoveredPin: (pin: pin | null) => void;
+    loadImages: () => void;
     embeds: {
         embed: string;
         x: number;
         y: number;
     }[];
-    addEmbed: (embed: string, x: number, y: number) => void;
+    setEmbeds: (embeds: { embed: string; x: number; y: number }[]) => void;
     overEmbed: string | null;
     setOverEmbed: (embed: string | null) => void;
     notFound: boolean;
@@ -39,7 +40,7 @@ export const usePin = create<usePin>((set, get) => ({
             return;
         }
         set({ pinboard: data });
-        const pinsData = await getPins(userId, pinboardId);
+        var pinsData = await getPins(userId, pinboardId);
         if (!pinsData) return;
         for (let pin of pinsData) {
             const content = await getContents(userId, pinboardId, pin._id);
@@ -48,20 +49,34 @@ export const usePin = create<usePin>((set, get) => ({
                 pin.videos = content.videos;
             }
         }
+
         set({ pins: pinsData });
     },
-    addPin: (pin: pin) => {
+    updateLoadedPin: (pin: pin) => {
         const pins = get().pins;
-        set({ pins: [...pins, pin] });
+        const index = pins.findIndex((p) => p._id === pin._id);
+        pins[index] = pin;
+        set({ pins });
     },
     hoveredPin: null,
     setHoveredPin: (hoveredPin: pin | null) => set({ hoveredPin }),
     notFound: false,
-    embeds: [],
-    addEmbed: (embed: string, x: number, y: number) => {
-        const embeds = get().embeds;
-        set({ embeds: [...embeds, { embed, x, y }] });
+    loadImages: () => {
+        const pins = get().pins;
+        pins.forEach((pin) => {
+            if (!pin.videos) return;
+            for (let i = 0; i < pin.videos.length; i++) {
+                const img = new Image();
+                img.src = (pin.videos[i] as content).url!;
+                img.setAttribute("crossorigin", "anonymous");
+                (pin.videos[i] as content).image = img;
+            }
+        });
+        set({ pins });
     },
+    embeds: [],
+    setEmbeds: (embeds: { embed: string; x: number; y: number }[]) =>
+        set({ embeds }),
     overEmbed: null,
     setOverEmbed: (embed: string | null) => set({ overEmbed: embed }),
     setNotFound: (notFound: boolean) => set({ notFound }),

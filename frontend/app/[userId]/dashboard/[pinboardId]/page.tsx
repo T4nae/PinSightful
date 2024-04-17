@@ -10,6 +10,7 @@ import { usePin } from "@/hooks/usePin";
 import { updatePinboard } from "@/actions/pinboard";
 import { drawPins, updatePattern } from "@/lib/canvasHelpers";
 import useDrag from "@/hooks/useDrag";
+import { pin, updatePin } from "@/actions/pin";
 
 export default function PinboardPage({
     params,
@@ -22,20 +23,22 @@ export default function PinboardPage({
     const { theme } = useTheme();
     const { userId, pinboardId } = params;
     const [reload, setReload] = useState<boolean>(true);
+    const [dragPin, setDragPin] = useState<pin | null>(null);
 
     const {
         pins,
         pointer,
         setPointer,
         setPins,
+        updateLoadedPin,
         setHoveredPin,
         notFound,
         pinboard,
+        loadImages,
         embeds,
-        addEmbed,
+        setEmbeds,
         setOverEmbed,
     } = usePin();
-    const [imagesLoaded, setImagesLoaded] = useState<boolean>(false);
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const patternRef = useRef<CanvasPattern | null>(null);
@@ -74,17 +77,9 @@ export default function PinboardPage({
         canvas.width = 1920 * 2 * zoomFactor.current;
         canvas.height = 1080 * 2 * zoomFactor.current;
 
+        loadImages();
         updatePattern(zoomFactor, theme, patternRef, ctx, canvas);
-        drawPins(
-            pins,
-            zoomFactor,
-            ctx,
-            theme,
-            imagesLoaded,
-            setImagesLoaded,
-            embeds,
-            addEmbed
-        );
+        drawPins(pins, zoomFactor, ctx, theme, embeds, setEmbeds);
 
         const handleWheel = (event: WheelEvent) => {
             if (event.ctrlKey) {
@@ -98,16 +93,7 @@ export default function PinboardPage({
                     updatePattern(zoomFactor, theme, patternRef, ctx, canvas); // Recreate the pattern
                     ctx.fillStyle = patternRef.current;
                     ctx.fillRect(0, 0, canvas.width, canvas.height);
-                    drawPins(
-                        pins,
-                        zoomFactor,
-                        ctx,
-                        theme,
-                        imagesLoaded,
-                        setImagesLoaded,
-                        embeds,
-                        addEmbed
-                    ); // Redraw the pins
+                    drawPins(pins, zoomFactor, ctx, theme, embeds, setEmbeds); // Redraw the pins
                 }
             }
         };
@@ -151,25 +137,65 @@ export default function PinboardPage({
                 );
             });
             setOverEmbed(overEmbed ? overEmbed.embed : null);
+
+            // handle dragging pin set pos to mouse pos
+            if (dragPin) {
+                const newPin = {
+                    ...dragPin,
+                    pos: {
+                        x: x / zoomFactor.current,
+                        y: y / zoomFactor.current,
+                    },
+                };
+                updateLoadedPin(newPin);
+                if (patternRef.current) {
+                    updatePattern(zoomFactor, theme, patternRef, ctx, canvas); // Recreate the pattern
+                    ctx.fillStyle = patternRef.current;
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    drawPins(pins, zoomFactor, ctx, theme, embeds, setEmbeds); // Redraw the pins
+                }
+            }
+        };
+
+        const handleMouseClick = (event: MouseEvent) => {
+            if (dragPin) {
+                // find updated pin and update
+                const newPin = pins.find((pin) => pin._id === dragPin._id);
+                if (!newPin) return;
+                updatePin({
+                    ...newPin,
+                    userId,
+                    pinBoardId: pinboardId,
+                    pinId: dragPin._id,
+                });
+                setDragPin(null);
+            }
         };
 
         canvas.addEventListener("mousemove", handleMouseMove);
+        canvas.addEventListener("click", handleMouseClick);
         window.addEventListener("wheel", handleWheel, { passive: false });
 
         return () => {
             window.removeEventListener("wheel", handleWheel);
+            canvas.removeEventListener("click", handleMouseClick);
             canvas.removeEventListener("mousemove", handleMouseMove);
         };
     }, [
+        pinboardId,
+        userId,
         reload,
         theme,
         pins,
         setHoveredPin,
         setPointer,
-        imagesLoaded,
-        addEmbed,
+        loadImages,
+        setEmbeds,
         setOverEmbed,
         embeds,
+        setDragPin,
+        dragPin,
+        updateLoadedPin,
     ]);
     return (
         <ScrollArea
@@ -183,6 +209,7 @@ export default function PinboardPage({
                 setReload={setReload}
                 pinboardId={pinboardId}
                 userId={userId}
+                setDragPin={setDragPin}
             >
                 <canvas ref={canvasRef}>
                     Your browser does not support the HTML5 canvas element.
