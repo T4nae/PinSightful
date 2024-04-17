@@ -8,6 +8,7 @@ export interface content {
     createdAt: string;
     type?: "text" | "video" | "image";
     redirect?: string;
+    image?: HTMLImageElement;
 }
 
 export interface pin {
