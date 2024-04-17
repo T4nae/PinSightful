@@ -41,6 +41,7 @@ export default function AiModal({
     const [error, setError] = useState<string | null>(null);
     const worker = useRef<Worker | null>(null);
     const { currentModel, chatGptApiKey, ollamaApiUrl } = useModel();
+    const [saving, setSaving] = useState<boolean>(false);
 
     const modelConfig =
         currentModel.provider === "OpenAi" && chatGptApiKey !== ""
@@ -94,7 +95,7 @@ export default function AiModal({
             handleClose();
             return;
         }
-
+        setSaving(true);
         const newPin = await addPin({
             userId,
             pinBoardId,
@@ -102,6 +103,7 @@ export default function AiModal({
             pos: pointer,
         });
         if (newPin) setReload(true);
+        setSaving(false);
         handleClose();
     };
 
@@ -179,7 +181,11 @@ export default function AiModal({
                     >
                         Save
                     </Button>
-                    <Button type="button" onClick={handleClose}>
+                    <Button
+                        type="button"
+                        onClick={handleClose}
+                        disabled={saving}
+                    >
                         Close
                     </Button>
                 </DialogFooter>

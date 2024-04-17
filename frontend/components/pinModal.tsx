@@ -43,8 +43,10 @@ export function PinDialog({
     const [text, setText] = useState<string>("");
     const [redirectUrl, setRedirectUrl] = useState<string>("");
     const [type, setType] = useState<"text" | "video" | "image">("image");
+    const [saving, setSaving] = useState<boolean>(false);
     const handleSave = async () => {
         if (!pin) return;
+        setSaving(true);
         const content = await addContent({
             type: opened == "text" ? "text" : type,
             text: text,
@@ -54,7 +56,8 @@ export function PinDialog({
             userId: userId,
             redirect: redirectUrl,
         });
-
+        if (content) setReload(true);
+        setSaving(false);
         handleClose();
     };
 
@@ -106,6 +109,7 @@ export function PinDialog({
                         {opened == "video" && (
                             <>
                                 <div className="flex items-center justify-between col-span-2">
+                                    <Label htmlFor="type">Image</Label>
                                     <Switch
                                         id="type"
                                         onCheckedChange={(checked) => {
@@ -114,9 +118,7 @@ export function PinDialog({
                                             );
                                         }}
                                     />
-                                    <Label htmlFor="type">
-                                        {type === "video" ? "Embed" : "Image"}
-                                    </Label>
+                                    <Label htmlFor="type">Embed</Label>
                                 </div>
                             </>
                         )}
@@ -152,7 +154,11 @@ export function PinDialog({
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button type="button" onClick={handleSave}>
+                    <Button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={saving}
+                    >
                         Save changes
                     </Button>
                 </DialogFooter>
