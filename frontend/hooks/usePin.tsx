@@ -62,8 +62,8 @@ export const usePin = create<usePin>((set, get) => ({
     setHoveredPin: (hoveredPin: pin | null) => set({ hoveredPin }),
     notFound: false,
     loadImages: () => {
-        const pins = get().pins;
-        pins.forEach((pin) => {
+        const pins: pin[] = get().pins;
+        pins.forEach((pin: pin) => {
             if (!pin.videos) return;
             for (let i = 0; i < pin.videos.length; i++) {
                 const img = new Image();
