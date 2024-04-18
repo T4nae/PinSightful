@@ -69,7 +69,7 @@ export const usePin = create<usePin>((set, get) => ({
                 const img = new Image();
                 img.src = (pin.videos[i] as content).url!;
                 img.setAttribute("crossorigin", "anonymous");
-                img.onload = () => ((pin.videos![i] as content).image = img);
+                (pin.videos![i] as content).image = img;
             }
         });
         set({ pins });
