@@ -82,7 +82,7 @@ export function PinboardContextMenu({
     const handleChatPanel = () => {
         const panel = resizablePanel.current;
         if (panel) {
-            if (panel.isCollapsed()) panel.expand();
+            panel.resize(35);
         }
     };
 
@@ -219,7 +219,7 @@ export function PinboardContextMenu({
                             onClick={handleChatPanel}
                             disabled={
                                 !resizablePanel.current ||
-                                !resizablePanel.current.isCollapsed()
+                                resizablePanel.current.getSize() > 1
                             }
                         >
                             Ask Pinboard <Badge className="ml-2">AI</Badge>
