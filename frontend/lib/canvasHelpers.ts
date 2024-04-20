@@ -111,16 +111,30 @@ export const drawPins = (
 
         for (let i = 0; i < pin.videos.length; i++) {
             const img = (pin.videos[i] as content).image!;
-            ctx.drawImage(
-                img,
-                posX + 10 * zoomFactor.current,
-                posY +
-                    16 * lines.length * zoomFactor.current +
-                    i * 158 * zoomFactor.current +
-                    10,
-                280 * zoomFactor.current,
-                158 * zoomFactor.current
-            );
+            if (!img.complete)
+                img.onload = () => {
+                    ctx.drawImage(
+                        img,
+                        posX + 10 * zoomFactor.current,
+                        posY +
+                            16 * lines.length * zoomFactor.current +
+                            i * 158 * zoomFactor.current +
+                            10,
+                        280 * zoomFactor.current,
+                        158 * zoomFactor.current
+                    );
+                };
+            else
+                ctx.drawImage(
+                    img,
+                    posX + 10 * zoomFactor.current,
+                    posY +
+                        16 * lines.length * zoomFactor.current +
+                        i * 158 * zoomFactor.current +
+                        10,
+                    280 * zoomFactor.current,
+                    158 * zoomFactor.current
+                );
 
             if ((pin.videos[i] as content).type === "video") {
                 const redirect = (pin.videos[i] as content).redirect!;
