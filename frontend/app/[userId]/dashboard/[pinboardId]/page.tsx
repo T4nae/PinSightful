@@ -11,6 +11,13 @@ import { updatePinboard } from "@/actions/pinboard";
 import { drawPins, updatePattern } from "@/lib/canvasHelpers";
 import useDrag from "@/hooks/useDrag";
 import { pin, updatePin } from "@/actions/pin";
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import ChatPanel from "@/components/chatPanel";
+import { ImperativePanelHandle } from "react-resizable-panels";
 
 export default function PinboardPage({
     params,
@@ -45,6 +52,7 @@ export default function PinboardPage({
     const zoomFactor = useRef<number>(1);
     const lastTheme = useRef<string | undefined>(undefined);
     const scrollRef = useRef<HTMLDivElement | null>(null);
+    const panel = useRef<ImperativePanelHandle>(null);
     useDrag(scrollRef);
 
     useEffect(() => {
@@ -198,24 +206,43 @@ export default function PinboardPage({
         updateLoadedPin,
     ]);
     return (
-        <ScrollArea
-            type="scroll"
+        <ResizablePanelGroup
+            direction="horizontal"
             style={{ height: "calc(100vh - 3.55rem)" }}
-            ref={scrollRef}
-            className="w-full"
         >
-            <PinboardContextMenu
-                pointer={pointer}
-                setReload={setReload}
-                pinboardId={pinboardId}
-                userId={userId}
-                setDragPin={setDragPin}
+            <ResizablePanel
+                collapsible
+
+                defaultSize={1}
+                maxSize={35}
+                ref={panel}
             >
-                <canvas ref={canvasRef}>
-                    Your browser does not support the HTML5 canvas element.
-                </canvas>
-            </PinboardContextMenu>
-            <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+                <ChatPanel Pins={pins} />
+            </ResizablePanel>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={100}>
+                <ScrollArea
+                    type="scroll"
+                    style={{ height: "calc(100vh - 3.55rem)" }}
+                    ref={scrollRef}
+                    className="w-full"
+                >
+                    <PinboardContextMenu
+                        pointer={pointer}
+                        setReload={setReload}
+                        pinboardId={pinboardId}
+                        userId={userId}
+                        setDragPin={setDragPin}
+                        resizablePanel={panel}
+                    >
+                        <canvas ref={canvasRef}>
+                            Your browser does not support the HTML5 canvas
+                            element.
+                        </canvas>
+                    </PinboardContextMenu>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+            </ResizablePanel>
+        </ResizablePanelGroup>
     );
 }

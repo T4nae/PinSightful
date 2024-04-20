@@ -2,11 +2,13 @@
 
 import {
     Dispatch,
+    RefObject,
     SetStateAction,
     useCallback,
     useEffect,
     useState,
 } from "react";
+import { ImperativePanelHandle } from "react-resizable-panels";
 
 import {
     ContextMenu,
@@ -31,6 +33,7 @@ export function PinboardContextMenu({
     pinboardId,
     userId,
     setDragPin,
+    resizablePanel,
 }: {
     children?: React.ReactNode;
     pointer: { x: number; y: number } | null;
@@ -38,6 +41,7 @@ export function PinboardContextMenu({
     pinboardId: string;
     userId: string;
     setDragPin: Dispatch<SetStateAction<pin | null>>;
+    resizablePanel: RefObject<ImperativePanelHandle>;
 }) {
     const { hoveredPin, overEmbed } = usePin();
 
@@ -74,6 +78,13 @@ export function PinboardContextMenu({
             setReload(true);
         })();
     }, [hoveredPin, userId, pinboardId, setReload]);
+
+    const handleChatPanel = () => {
+        const panel = resizablePanel.current;
+        if (panel) {
+            if (panel.isCollapsed()) panel.expand();
+        }
+    };
 
     useEffect(() => {
         // check client platform using user agent
@@ -203,6 +214,15 @@ export function PinboardContextMenu({
                             onClick={() => setDragPin(hoveredPin!)}
                         >
                             Move Pin
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                            onClick={handleChatPanel}
+                            disabled={
+                                !resizablePanel.current ||
+                                !resizablePanel.current.isCollapsed()
+                            }
+                        >
+                            Ask Pinboard <Badge className="ml-2">AI</Badge>
                         </ContextMenuItem>
                         <ContextMenuItem onClick={handleReload}>
                             Refresh

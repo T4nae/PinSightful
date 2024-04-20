@@ -23,10 +23,11 @@ import { LangChainTracer } from "@langchain/core/tracers/tracer_langchain";
 import type { CallbackManagerForRetrieverRun } from "@langchain/core/callbacks/manager";
 
 import { SearchRequest, SearchResult, webSearch } from "@/actions/web-search";
+import { content, pin } from "@/actions/pin";
 
 export interface CustomRetrieverInput extends BaseRetrieverInput {}
 
-export class CustomRetriever extends BaseRetriever {
+export class WebRetriever extends BaseRetriever {
     lc_namespace = ["langchain", "retrievers"];
 
     constructor(fields?: CustomRetrieverInput) {
@@ -59,6 +60,41 @@ export class CustomRetriever extends BaseRetriever {
     }
 }
 
+export class PinRetriever extends BaseRetriever {
+    lc_namespace = ["langchain", "retrievers"];
+    pins: pin[];
+
+    constructor(pins: pin[], fields?: CustomRetrieverInput) {
+        super(fields);
+        this.pins = pins;
+    }
+
+    async _getRelevantDocuments(
+        query: string,
+        runManager?: CallbackManagerForRetrieverRun
+    ): Promise<Document[]> {
+        const documents: Document[] = [];
+
+        for (const pin of this.pins) {
+            const texts = (pin.texts as content[]) || [];
+
+            documents.push(
+                ...texts.map(
+                    (content) =>
+                        new Document({
+                            pageContent: content.text || "",
+                            metadata: {
+                                id: content._id,
+                                type: content.type || "text",
+                            },
+                        })
+                )
+            );
+        }
+
+        return documents;
+    }
+}
 const OLLAMA_RESPONSE_SYSTEM_TEMPLATE = `You are an experienced researcher, expert at interpreting and compiling content based on provided sources. Using the provided context, and the user's topic respond to the best of your ability using the resources provided.
 Generate a well thought and in-depth content for a given Topic based solely on the provided search results. You must only use information from the provided search results. Use an unbiased and journalistic tone. Combine search results together into a coherent answer. Do not repeat text.
 If there is nothing in the context relevant to the question at hand, just say "Hmm, I'm not sure." Don't try to make up an answer.
@@ -70,8 +106,10 @@ Anything between the following \`context\` html blocks is retrieved from a knowl
 REMEMBER: NEVER USE ANY CONVERSATION STARTER LIKE "SURE HERE IS CONTENT YOU REQUESTED" OR RESPONSES IN THE CONTEXT. ONLY USE THE INFORMATION PROVIDED IN THE CONTEXT.
 REMEMBER: If there is no relevant information within the context, just say "Hmm, I'm not sure." Don't try to make up an answer. Anything between the preceding 'context' html blocks is retrieved from a knowledge bank, not part of the conversation with the user.`;
 
-const queryWebSearch = async (
+const querySearch = async (
     topic: string,
+    type: string,
+    pins: pin[],
     {
         chatModel,
         devModeTracer,
@@ -106,9 +144,16 @@ const queryWebSearch = async (
         ],
     ]);
 
+    let retriever: BaseRetriever;
+    if (type === "websearch") {
+        retriever = new WebRetriever();
+    } else {
+        retriever = new PinRetriever(pins);
+    }
+
     const historyAwareRetrieverChain = await createHistoryAwareRetriever({
         llm: chatModel,
-        retriever: new CustomRetriever(),
+        retriever,
         rephrasePrompt: historyAwarePrompt,
     });
 
@@ -173,7 +218,7 @@ self.addEventListener("message", async (event: { data: any }) => {
             : new ChatOllama(modelConfig);
 
     try {
-        await queryWebSearch(event.data.topic, {
+        await querySearch(event.data.topic, event.data.type, event.data.pins, {
             devModeTracer,
             chatModel,
         });
