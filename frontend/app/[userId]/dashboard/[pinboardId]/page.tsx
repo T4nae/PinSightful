@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { redirect } from "next/navigation";
 import { useTheme } from "next-themes";
+import { ImperativePanelHandle } from "react-resizable-panels";
 
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { PinboardContextMenu } from "@/components/pinboardContextMenu";
@@ -17,7 +18,6 @@ import {
     ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import ChatPanel from "@/components/chatPanel";
-import { ImperativePanelHandle } from "react-resizable-panels";
 
 export default function PinboardPage({
     params,
@@ -180,12 +180,20 @@ export default function PinboardPage({
             }
         };
 
+        const handleChatPanel = () => {
+            if (panel.current) {
+                panel.current.resize(1);
+            }
+        };
+
         canvas.addEventListener("mousemove", handleMouseMove);
         canvas.addEventListener("click", handleMouseClick);
+        canvas.addEventListener("dblclick", handleChatPanel);
         window.addEventListener("wheel", handleWheel, { passive: false });
 
         return () => {
             window.removeEventListener("wheel", handleWheel);
+            canvas.removeEventListener("dblclick", handleChatPanel);
             canvas.removeEventListener("click", handleMouseClick);
             canvas.removeEventListener("mousemove", handleMouseMove);
         };
@@ -212,7 +220,6 @@ export default function PinboardPage({
         >
             <ResizablePanel
                 collapsible
-
                 defaultSize={1}
                 maxSize={35}
                 ref={panel}
