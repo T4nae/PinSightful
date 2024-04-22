@@ -9,7 +9,6 @@ config();
 
 import * as db from "../mongodb.js";
 
-await db.connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -280,7 +279,10 @@ app.get("/search", async (req, res) => {
     }
 });
 
-app.listen(PORT, () => console.log(`Server ready on port ${PORT}.`));
+app.listen(PORT, async () => {
+    console.log(`Server ready on port ${PORT}.`);
+    await db.connectDB();
+});
 app.keepAliveTimeout = 120 * 1000;
 app.headersTimeout = 120 * 1000;
 export default app;
