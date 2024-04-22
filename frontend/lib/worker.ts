@@ -43,8 +43,18 @@ const WebRetriever = async (query: string) => {
         numResults: 5,
     };
 
-    const documents: Document[] = await webSearch(searchRequest);
-    console.log(documents);
+    const searchResults: SearchResult[] = await webSearch(searchRequest);
+
+    const documents: Document[] = searchResults.map((result) => {
+        return new Document({
+            pageContent: result.snippet,
+            metadata: {
+                id: result.link,
+                type: "websearch",
+            },
+        });
+    });
+
     const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 500,
         chunkOverlap: 50,
