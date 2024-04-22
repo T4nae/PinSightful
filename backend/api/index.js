@@ -4,6 +4,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import { config } from "dotenv";
+import cheerio from "cheerio";
 config();
 
 import * as db from "../mongodb.js";
@@ -260,6 +261,22 @@ app.get("/search", async (req, res) => {
             },
             ...resSearch,
         ];
+
+        // extract html data from each link in search results
+        for (let i = 1; i < data.length; i++) {
+            let res = await fetch(data[i].link);
+            let html = await res.text();
+
+            const $ = cheerio.load(html);
+            $("script, style, head, nav, footer, iframe, img").remove();
+            data[i].snippet = $("body")
+                .text()
+                .toString()
+                .replace(/\s+/g, " ")
+                .trim()
+                .substring(0, 2500);
+        }
+        console.log(data);
         res.send(data);
     } catch (error) {
         res.status(500).send(error.message);
