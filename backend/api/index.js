@@ -92,7 +92,6 @@ app.post("/add-pin", async (req, res) => {
         const pin = await db.addPin(userId, pinBoardId, data);
         res.status(201).send(pin);
     } catch (error) {
-        console.log(error.message);
         res.status(400).send(error.message);
     }
 });
@@ -117,7 +116,6 @@ app.post("/add-text", async (req, res) => {
         const text = await db.addText(userId, pinBoardId, pinId, data);
         res.status(201).send(text);
     } catch (error) {
-        console.log(error.message);
         res.status(400).send(error.message);
     }
 });
@@ -143,7 +141,6 @@ app.post("/add-video", async (req, res) => {
         const video = await db.addVideo(userId, pinBoardId, pinId, data);
         res.status(201).send(video);
     } catch (error) {
-        console.log(error.message);
         res.status(400).send(error.message);
     }
 });
@@ -276,7 +273,7 @@ app.get("/search", async (req, res) => {
                 .trim()
                 .substring(0, 2500);
         }
-        console.log(data);
+
         res.send(data);
     } catch (error) {
         res.status(500).send(error.message);

@@ -27,6 +27,6 @@ export async function webSearch(
             },
         }
     );
-    console.log(results.data);
+
     return results.data;
 }
