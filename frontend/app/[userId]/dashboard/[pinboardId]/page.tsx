@@ -43,6 +43,7 @@ export default function PinboardPage({
         pinboard,
         loadImages,
         embeds,
+        overEmbed,
         setEmbeds,
         setOverEmbed,
     } = usePin();
@@ -181,8 +182,9 @@ export default function PinboardPage({
         };
 
         const handleChatPanel = () => {
+            if (overEmbed) window.open(overEmbed, "_blank");
             if (panel.current) {
-                panel.current.resize(1);
+                if (panel.current.getSize() > 0) panel.current.resize(1);
             }
         };
 
@@ -207,6 +209,7 @@ export default function PinboardPage({
         setPointer,
         loadImages,
         setEmbeds,
+        overEmbed,
         setOverEmbed,
         embeds,
         setDragPin,
