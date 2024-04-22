@@ -46,11 +46,11 @@ Then, go to the `backend/` directory and rename the `.example.env` file to `.env
 
 Then, go to the `frontend/` directory and rename the `.example.env.local` file to `.env.local`. Update the environment variables in the `.env.local` file with your own [Clerk]("https://clerk.com/") API keys and Backend URL after deploying the backend. (when deploying locally it is `http://localhost:5000`)
 
-Then, you can start the server and the client-side application by running the following command in their respective directories:
+Then, you can start the server and the client-side application in development mode by running the following command in their respective directories:
 
 ```
 
-npm start
+npm run dev
 
 ```
 
