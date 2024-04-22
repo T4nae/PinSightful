@@ -230,7 +230,7 @@ export default function PinboardPage({
                 <ChatPanel Pins={pins} />
             </ResizablePanel>
             <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={100}>
+            <ResizablePanel defaultSize={99}>
                 <ScrollArea
                     type="scroll"
                     style={{ height: "calc(100vh - 3.55rem)" }}

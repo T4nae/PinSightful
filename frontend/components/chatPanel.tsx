@@ -17,7 +17,7 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
     const { currentModel, chatGptApiKey, ollamaApiUrl } = useModel();
     const [chat, setChat] = useState<
         {
-            user: "user" | "ai";
+            role: "user" | "ai";
             text: string;
         }[]
     >([]);
@@ -69,8 +69,8 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
             });
             setChat((prevChat) => [
                 ...prevChat,
-                { user: "user", text: topic },
-                { user: "ai", text: "" },
+                { role: "user", text: topic },
+                { role: "ai", text: "" },
             ]);
 
             worker.current.onmessage = (event) => {
@@ -81,13 +81,13 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
                     // update last chat bubble to show the answer
                     setChat((prevChat) => {
                         const last = prevChat[prevChat.length - 1];
-                        if (last.user === "ai") {
+                        if (last.role === "ai") {
                             return [
                                 ...prevChat.slice(0, prevChat.length - 1),
-                                { user: "ai", text: last.text + data },
+                                { role: "ai", text: last.text + data },
                             ];
                         } else {
-                            return [...prevChat, { user: "ai", text: data }];
+                            return [...prevChat, { role: "ai", text: data }];
                         }
                     });
                 } else if (type === "complete") {
@@ -127,7 +127,7 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
             <ScrollArea className="flex-grow mb-2">
                 <div className="mr-4">
                     {chat.map((c, i) => (
-                        <Bubble key={i} user={c.user} text={c.text} />
+                        <Bubble key={i} role={c.role} text={c.text} />
                     ))}
                     {error && (
                         <div className="text-red-500 text-center">{error}</div>
@@ -144,7 +144,7 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
                 />
                 <Button
                     onClick={handleSearch}
-                    disabled={loading || topic.length == 0}
+                    disabled={loading || topic.length == 0 || pins.length == 0}
                 >
                     {loading ? (
                         <CircleStopIcon size={25} />
@@ -157,16 +157,16 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
     );
 }
 
-const Bubble = ({ user, text }: { user: "user" | "ai"; text: string }) => {
+const Bubble = ({ role, text }: { role: "user" | "ai"; text: string }) => {
     return (
         <div
             className={`flex ${
-                user === "user" ? "justify-end" : "justify-start"
+                role === "user" ? "justify-end" : "justify-start"
             } mb-2`}
         >
             <div
                 className={`rounded-lg p-2 ${
-                    user === "user"
+                    role === "user"
                         ? "bg-blue-500 text-white"
                         : "bg-gray-200 text-black"
                 }`}

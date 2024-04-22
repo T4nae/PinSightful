@@ -11,7 +11,11 @@ import {
     MessagesPlaceholder,
 } from "@langchain/core/prompts";
 import { RunnableSequence, RunnablePick } from "@langchain/core/runnables";
+import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { Voy as VoyClient } from "voy-search";
 
+import { VoyVectorStore } from "@langchain/community/vectorstores/voy";
+import { HuggingFaceTransformersEmbeddings } from "@langchain/community/embeddings/hf_transformers";
 import { createRetrievalChain } from "langchain/chains/retrieval";
 import {
     BaseRetriever,
@@ -24,87 +28,105 @@ import type { CallbackManagerForRetrieverRun } from "@langchain/core/callbacks/m
 
 import { SearchRequest, SearchResult, webSearch } from "@/actions/web-search";
 import { content, pin } from "@/actions/pin";
+import { VectorStoreRetriever } from "@langchain/core/vectorstores";
 
-export interface CustomRetrieverInput extends BaseRetrieverInput {}
+const embeddings = new HuggingFaceTransformersEmbeddings({
+    modelName: "Xenova/all-MiniLM-L6-v2",
+    // modelName: "nomic-ai/nomic-embed-text-v1",
+});
 
-export class WebRetriever extends BaseRetriever {
-    lc_namespace = ["langchain", "retrievers"];
+const WebRetriever = async (query: string) => {
+    const searchRequest: SearchRequest = {
+        query: query,
+        timerange: "", // Set timerange if needed
+        region: "", // Set region if needed
+        numResults: 5,
+    };
 
-    constructor(fields?: CustomRetrieverInput) {
-        super(fields);
+    const documents: Document[] = await webSearch(searchRequest);
+    console.log(documents);
+    const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 500,
+        chunkOverlap: 50,
+    });
+    const splitDocs = await splitter.splitDocuments(documents);
+
+    const voyClient = new VoyClient();
+    const vectorStore = new VoyVectorStore(voyClient, embeddings);
+    await vectorStore.addDocuments(splitDocs);
+
+    return vectorStore.asRetriever();
+};
+
+const PinRetriever = async (pins: pin[]) => {
+    const documents: Document[] = [];
+
+    for (const pin of pins) {
+        const texts = (pin.texts as content[]) || [];
+
+        documents.push(
+            ...texts.map(
+                (content) =>
+                    new Document({
+                        pageContent: content.text || "",
+                        metadata: {
+                            id: content._id,
+                            type: content.type || "text",
+                        },
+                    })
+            )
+        );
     }
 
-    async _getRelevantDocuments(
-        query: string,
-        runManager?: CallbackManagerForRetrieverRun
-    ): Promise<Document[]> {
-        const searchRequest: SearchRequest = {
-            query: query,
-            timerange: "", // Set timerange if needed
-            region: "", // Set region if needed
-            numResults: 5,
-        };
-
-        const searchResults: SearchResult[] = await webSearch(searchRequest);
-
-        const documents: Document[] = searchResults.map((result) => {
-            return new Document({
-                pageContent: `${result.title}\n${result.snippet}`,
+    // conversation context documents
+    documents.push(
+        ...[
+            new Document({
+                pageContent:
+                    "If user says Hi , hello or any other greeting reply with a greeting and ask if they need help with research. If user says bye, goodbye or any other farewell, reply with a farewell and end the conversation.",
                 metadata: {
-                    url: result.link,
+                    id: "context",
+                    type: "context",
                 },
-            });
-        });
+            }),
+            new Document({
+                pageContent:
+                    "Never mention the context in your response. If the context does not offer relevant information, respond with 'Hmm, I'm not sure.'",
+                metadata: {
+                    id: "context",
+                    type: "context",
+                },
+            }),
+        ]
+    );
 
-        return documents;
-    }
-}
+    const splitter = new RecursiveCharacterTextSplitter({
+        chunkSize: 500,
+        chunkOverlap: 50,
+    });
+    const splitDocs = await splitter.splitDocuments(documents);
 
-export class PinRetriever extends BaseRetriever {
-    lc_namespace = ["langchain", "retrievers"];
-    pins: pin[];
+    const voyClient = new VoyClient();
+    const vectorStore = new VoyVectorStore(voyClient, embeddings);
+    await vectorStore.addDocuments(splitDocs);
 
-    constructor(pins: pin[], fields?: CustomRetrieverInput) {
-        super(fields);
-        this.pins = pins;
-    }
+    return vectorStore.asRetriever();
+};
 
-    async _getRelevantDocuments(
-        query: string,
-        runManager?: CallbackManagerForRetrieverRun
-    ): Promise<Document[]> {
-        const documents: Document[] = [];
-
-        for (const pin of this.pins) {
-            const texts = (pin.texts as content[]) || [];
-
-            documents.push(
-                ...texts.map(
-                    (content) =>
-                        new Document({
-                            pageContent: content.text || "",
-                            metadata: {
-                                id: content._id,
-                                type: content.type || "text",
-                            },
-                        })
-                )
-            );
-        }
-
-        return documents;
-    }
-}
-const OLLAMA_RESPONSE_SYSTEM_TEMPLATE = `You are an experienced researcher, expert at interpreting and compiling content based on provided sources. Using the provided context, and the user's topic respond to the best of your ability using the resources provided.
-Generate a well thought and in-depth content for a given Topic based solely on the provided search results. You must only use information from the provided search results. Use an unbiased and journalistic tone. Combine search results together into a coherent answer. Do not repeat text.
-If there is nothing in the context relevant to the question at hand, just say "Hmm, I'm not sure." Don't try to make up an answer.
+const RESEARCH_RESPONSE_SYSTEM_TEMPLATE = `As an adept researcher, proficient in interpreting and consolidating information from provided sources, your task is to craft a thorough and insightful response to the user's topic using the given context and resources. Your response should be unbiased and presented in a journalistic tone, seamlessly integrating information from the provided search results without repetition. If the context does not offer relevant information, respond with "Hmm, I'm not sure." Avoid fabricating answers. Remember not to initiate conversation or use provided responses.
 Anything between the following \`context\` html blocks is retrieved from a knowledge bank, not part of the conversation with the user.
 <context>
 {context}
 <context/>
 
-REMEMBER: NEVER USE ANY CONVERSATION STARTER LIKE "SURE HERE IS CONTENT YOU REQUESTED" OR RESPONSES IN THE CONTEXT. ONLY USE THE INFORMATION PROVIDED IN THE CONTEXT.
-REMEMBER: If there is no relevant information within the context, just say "Hmm, I'm not sure." Don't try to make up an answer. Anything between the preceding 'context' html blocks is retrieved from a knowledge bank, not part of the conversation with the user.`;
+REMEMBER: If there is no relevant information within the context, just say "Hmm, I'm not sure." and Stop. Don't try to make up an answer. Anything between the preceding 'context' html blocks is retrieved from a knowledge bank, not part of the conversation with the user.`;
+
+const CHAT_RESPONSE_SYSTEM_TEMPLATE = `As an AI assistant, your task is to engage in a conversation with the user, providing relevant and informative responses to their queries. Your responses should be concise, engaging, and tailored to the user's needs. If the context does not offer relevant information, respond with "Hmm, I'm not sure." Avoid fabricating answers. Remember not to initiate conversation or use provided responses. never mention the context in your response.
+Anything between the following \`context\` html blocks is retrieved from a knowledge bank, not part of the conversation with the user.
+<context>
+{context}
+<context/>
+`;
 
 const querySearch = async (
     topic: string,
@@ -123,7 +145,12 @@ const querySearch = async (
         chat_history: BaseMessage[];
         question: string;
     }>([
-        ["system", OLLAMA_RESPONSE_SYSTEM_TEMPLATE],
+        [
+            "system",
+            type === "websearch"
+                ? RESEARCH_RESPONSE_SYSTEM_TEMPLATE
+                : CHAT_RESPONSE_SYSTEM_TEMPLATE,
+        ],
         new MessagesPlaceholder("chat_history"),
         ["user", `{input}`],
     ]);
@@ -144,11 +171,11 @@ const querySearch = async (
         ],
     ]);
 
-    let retriever: BaseRetriever;
+    let retriever: BaseRetriever | VectorStoreRetriever<VoyVectorStore>;
     if (type === "websearch") {
-        retriever = new WebRetriever();
+        retriever = await WebRetriever(topic);
     } else {
-        retriever = new PinRetriever(pins);
+        retriever = await PinRetriever(pins);
     }
 
     const historyAwareRetrieverChain = await createHistoryAwareRetriever({
