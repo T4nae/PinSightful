@@ -139,7 +139,26 @@ export const getPins = async (userId, pinBoardId) => {
     const pins = await model.Pin.find({
         pinBoard: pinBoardId,
     });
-    return pins;
+
+    // get all texts and videos for each pin
+    let resPins = [];
+    for (let i in pins) {
+        const pin = pins[i];
+        const texts = await model.Text.find({
+            pin: pin._id,
+        });
+        const videos = await model.Video.find({
+            pin: pin._id,
+        });
+        delete pin.texts;
+        delete pin.videos;
+        resPins.push({
+            ...pin._doc,
+            texts: texts,
+            videos: videos,
+        });
+    }
+    return resPins;
 };
 
 export const addText = async (userId, pinBoardId, pinId, data) => {
