@@ -6,9 +6,10 @@ export const drawPins = (
     zoomFactor: MutableRefObject<number>,
     ctx: CanvasRenderingContext2D,
     theme: string | undefined,
-    embeds: { embed: string; x: number; y: number }[],
+    embeds: { _id: string; embed: string; x: number; y: number }[],
     setEmbeds: (
         embeds: {
+            _id: string;
             embed: string;
             x: number;
             y: number;
@@ -111,6 +112,7 @@ export const drawPins = (
 
         for (let i = 0; i < pin.videos.length; i++) {
             const img = (pin.videos[i] as content).image!;
+            if (img === null) return;
             if (!img.complete)
                 img.onload = () => {
                     ctx.drawImage(
@@ -137,13 +139,15 @@ export const drawPins = (
                 );
 
             if ((pin.videos[i] as content).type === "video") {
-                const redirect = (pin.videos[i] as content).redirect!;
-                var embed = embeds.find((embed) => embed.embed === redirect);
+                const redirect = pin.videos[i] as content;
+                var embed = embeds.find((embed) => embed._id === redirect._id);
+
                 if (!embed) {
                     setEmbeds([
                         ...embeds,
                         {
-                            embed: redirect,
+                            _id: redirect._id,
+                            embed: redirect.redirect!,
                             x: posX + 10 * zoomFactor.current,
                             y:
                                 posY +
@@ -154,14 +158,27 @@ export const drawPins = (
                     ]);
                 } else {
                     // update the embed position with zoom factor
-                    embed.x = posX + 10 * zoomFactor.current;
-                    embed.y =
-                        posY +
-                        16 * lines.length * zoomFactor.current +
-                        i * 158 * zoomFactor.current +
-                        10;
+                    const updatedEmbeds = embeds.map((e) => {
+                        if (embed && e._id === embed._id) {
+                            return {
+                                ...e,
+                                x: posX + 10 * zoomFactor.current,
+                                y:
+                                    posY +
+                                    16 * lines.length * zoomFactor.current +
+                                    i * 158 * zoomFactor.current +
+                                    10,
+                            };
+                        }
+                        return e;
+                    });
 
-                    setEmbeds(embeds);
+                    // update the embeds state if there is a change
+                    if (
+                        JSON.stringify(updatedEmbeds) !== JSON.stringify(embeds)
+                    ) {
+                        setEmbeds(updatedEmbeds);
+                    }
                 }
 
                 // draw share icon on the corner of the video
