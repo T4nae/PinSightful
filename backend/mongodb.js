@@ -298,6 +298,7 @@ export const deletePin = async (userId, pinBoardId, pinId) => {
         throw new Error("Invalid PinId");
     }
 
+    const pin = await model.Pin.findById(pinId);
     await model.Text.deleteMany({
         _id: {
             $in: pin.texts,
@@ -310,11 +311,10 @@ export const deletePin = async (userId, pinBoardId, pinId) => {
         },
     });
 
+    await model.Pin.findByIdAndDelete(pinId);
     await model.PinBoard.findByIdAndUpdate(pinBoardId, {
         $pull: { pins: pinId },
     });
-    const pin = await model.Pin.findById(pinId);
-    await model.Pin.findByIdAndDelete(pinId);
 };
 
 export const deleteText = async (userId, pinBoardId, pinId, textId) => {
