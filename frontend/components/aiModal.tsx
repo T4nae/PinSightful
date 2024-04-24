@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { addPin } from "@/actions/pin";
+import { usePin } from "@/hooks/usePin";
 
 export default function AiModal({
     setReload,
@@ -42,6 +43,7 @@ export default function AiModal({
     const worker = useRef<Worker | null>(null);
     const { currentModel, chatGptApiKey, ollamaApiUrl } = useModel();
     const [saving, setSaving] = useState<boolean>(false);
+    const { pins, updatePins } = usePin();
 
     const modelConfig =
         currentModel.provider === "OpenAi" && chatGptApiKey !== ""
@@ -69,7 +71,7 @@ export default function AiModal({
                 provider: currentModel.provider,
                 topic,
                 modelConfig,
-                type: "websearch"
+                type: "websearch",
             });
 
             worker.current.onmessage = (event) => {
@@ -97,6 +99,16 @@ export default function AiModal({
             return;
         }
         setSaving(true);
+        updatePins([
+            ...pins,
+            {
+                _id: "",
+                userId,
+                pinBoardId: pinBoardId!,
+                pos: pointer,
+                texts: [searchResult.join("")],
+            },
+        ]);
         const newPin = await addPin({
             userId,
             pinBoardId,

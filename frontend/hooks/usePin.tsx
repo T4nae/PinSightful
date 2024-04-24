@@ -1,6 +1,5 @@
 import { create } from "zustand";
 
-import { getContents } from "@/actions/content";
 import { content, getPins, pin } from "@/actions/pin";
 import { getPinboard, Pinboard } from "@/actions/pinboard";
 
@@ -10,16 +9,20 @@ interface usePin {
     pointer: { x: number; y: number } | null;
     setPointer: (x: number, y: number) => void;
     setPins: (userId: string, pinboardId: string) => void;
+    updatePins: (pins: pin[]) => void;
     updateLoadedPin: (pin: pin) => void;
     hoveredPin: pin | null;
     setHoveredPin: (pin: pin | null) => void;
     loadImages: () => void;
     embeds: {
+        _id: string;
         embed: string;
         x: number;
         y: number;
     }[];
-    setEmbeds: (embeds: { embed: string; x: number; y: number }[]) => void;
+    setEmbeds: (
+        embeds: { _id: string; embed: string; x: number; y: number }[]
+    ) => void;
     overEmbed: string | null;
     setOverEmbed: (embed: string | null) => void;
     notFound: boolean;
@@ -34,6 +37,7 @@ export const usePin = create<usePin>((set, get) => ({
         set({ pointer: { x, y } });
     },
     setPins: async (userId: string, pinboardId: string) => {
+        set({ embeds: []});
         const data = await getPinboard(userId, pinboardId);
         if (!data) {
             set({ notFound: true });
@@ -42,15 +46,10 @@ export const usePin = create<usePin>((set, get) => ({
         set({ pinboard: data });
         var pinsData = await getPins(userId, pinboardId);
         if (!pinsData) return;
-        for (let pin of pinsData) {
-            const content = await getContents(userId, pinboardId, pin._id);
-            if (content) {
-                pin.texts = content.texts;
-                pin.videos = content.videos;
-            }
-        }
-
         set({ pins: pinsData });
+    },
+    updatePins: (pins: pin[]) => {
+        set({ pins });
     },
     updateLoadedPin: (pin: pin) => {
         const pins = get().pins;
@@ -75,8 +74,9 @@ export const usePin = create<usePin>((set, get) => ({
         set({ pins });
     },
     embeds: [],
-    setEmbeds: (embeds: { embed: string; x: number; y: number }[]) =>
-        set({ embeds }),
+    setEmbeds: (
+        embeds: { _id: string; embed: string; x: number; y: number }[]
+    ) => set({ embeds }),
     overEmbed: null,
     setOverEmbed: (embed: string | null) => set({ overEmbed: embed }),
     setNotFound: (notFound: boolean) => set({ notFound }),

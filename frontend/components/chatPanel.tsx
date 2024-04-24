@@ -98,7 +98,6 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
                 }
             };
         } catch (error) {
-            console.log(error);
             setError("Error occurred while searching. Please try again.");
             setLoading(false);
         }

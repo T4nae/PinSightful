@@ -43,7 +43,7 @@ export function PinboardContextMenu({
     setDragPin: Dispatch<SetStateAction<pin | null>>;
     resizablePanel: RefObject<ImperativePanelHandle>;
 }) {
-    const { hoveredPin, overEmbed } = usePin();
+    const { hoveredPin, overEmbed, pins, updatePins } = usePin();
 
     const [platform, setPlatform] = useState<"⌘" | "alt" | "❖">("❖");
     const [activeDialog, setActiveDialog] = useState<
@@ -56,6 +56,15 @@ export function PinboardContextMenu({
     const handleNewPin = useCallback(() => {
         (async () => {
             if (!pointer) return;
+            updatePins([
+                ...pins,
+                {
+                    _id: "",
+                    userId,
+                    pinBoardId: pinboardId!,
+                    pos: pointer,
+                },
+            ]);
             const pin = await addPin({
                 userId,
                 pinBoardId: pinboardId,
@@ -63,12 +72,13 @@ export function PinboardContextMenu({
             });
             if (pin) setReload(true);
         })();
-    }, [pointer, userId, pinboardId, setReload]);
+    }, [pointer, userId, pinboardId, setReload, pins, updatePins]);
 
     const handleRemovePin = useCallback(() => {
         // remove hovered pin
         (async () => {
             if (!hoveredPin) return;
+            updatePins(pins.filter((p) => p._id !== hoveredPin._id));
             await removePin({
                 userId,
                 pinBoardId: pinboardId,
@@ -77,7 +87,7 @@ export function PinboardContextMenu({
             });
             setReload(true);
         })();
-    }, [hoveredPin, userId, pinboardId, setReload]);
+    }, [hoveredPin, userId, pinboardId, setReload, pins, updatePins]);
 
     const handleChatPanel = () => {
         const panel = resizablePanel.current;
@@ -173,7 +183,9 @@ export function PinboardContextMenu({
                             </ContextMenuSubTrigger>
                             <ContextMenuSubContent className="w-48">
                                 <ContextMenuItem
-                                    disabled={hoveredPin == null}
+                                    disabled={
+                                        hoveredPin == null || !hoveredPin._id
+                                    }
                                     onClick={() => setActiveDialog("text")}
                                 >
                                     Add Text
@@ -183,7 +195,9 @@ export function PinboardContextMenu({
                                 </ContextMenuItem>
 
                                 <ContextMenuItem
-                                    disabled={hoveredPin == null}
+                                    disabled={
+                                        hoveredPin == null || !hoveredPin._id
+                                    }
                                     onClick={() => {
                                         setActiveDialog("video");
                                     }}

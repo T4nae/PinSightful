@@ -13,10 +13,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import AiModal from "@/components/aiModal";
-import { pin } from "@/actions/pin";
+import { pin, content } from "@/actions/pin";
 import { Textarea } from "@/components/ui/textarea";
 import { addContent } from "@/actions/content";
 import { Switch } from "@/components/ui/switch";
+import { usePin } from "@/hooks/usePin";
 
 export function PinDialog({
     children,
@@ -44,9 +45,56 @@ export function PinDialog({
     const [redirectUrl, setRedirectUrl] = useState<string>("");
     const [type, setType] = useState<"text" | "video" | "image">("image");
     const [saving, setSaving] = useState<boolean>(false);
+    const { pins, updatePins } = usePin();
     const handleSave = async () => {
         if (!pin) return;
         setSaving(true);
+
+        type == "text"
+            ? updatePins(
+                  pins.map((p) => {
+                      if (p._id == pin._id) {
+                          const newContent: content = {
+                              _id: "",
+                              pin: pin._id!,
+                              text: text,
+                              createdAt: "",
+                              type: "text",
+                          };
+                          return {
+                              ...p,
+                              texts: (p.texts as content[])
+                                  ? [...(p.texts as content[]), newContent]
+                                  : [newContent],
+                          };
+                      }
+                      return p;
+                  })
+              )
+            : updatePins(
+                  pins.map((p) => {
+                      if (p._id == pin._id) {
+                          const newContent: content = {
+                              _id: "",
+                              pin: pin._id!,
+                              createdAt: "",
+                              type: type,
+                              url: text,
+                              redirect: redirectUrl,
+                          };
+                          return {
+                              ...p,
+                              texts: (p.texts as content[])
+                                  ? [...(p.texts as content[]), newContent]
+                                  : [newContent],
+                          };
+                      }
+                      return p;
+                  })
+              );
+        setSaving(false);
+        handleClose();
+
         const content = await addContent({
             type: opened == "text" ? "text" : type,
             text: text,
@@ -57,8 +105,6 @@ export function PinDialog({
             redirect: redirectUrl,
         });
         if (content) setReload(true);
-        setSaving(false);
-        handleClose();
     };
 
     const handleClose = () => {
