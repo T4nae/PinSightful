@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo, RefObject } from "react";
 
 import { useModel } from "@/hooks/useModel";
 import { pin } from "@/actions/pin";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { CircleStopIcon, ForwardIcon } from "lucide-react";
+import { ImperativePanelHandle } from "react-resizable-panels";
 
-export default function ChatPanel({ Pins }: { Pins: pin[] }) {
+export default function ChatPanel({ Pins, Panel }: { Pins: pin[], Panel: RefObject<ImperativePanelHandle> }) {
     const [topic, setTopic] = useState("");
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -21,9 +22,10 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
             text: string;
         }[]
     >([]);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    const modelConfig =
-        currentModel.provider === "OpenAi" && chatGptApiKey !== ""
+    const modelConfig = useMemo(() => {
+        return currentModel.provider === "OpenAi" && chatGptApiKey !== ""
             ? {
                   model: currentModel.name,
                   temperature: 0.5,
@@ -34,6 +36,7 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
                   temperature: 0.3,
                   model: currentModel.name,
               };
+    }, [currentModel, chatGptApiKey, ollamaApiUrl]);
 
     let pins: pin[];
 
@@ -52,7 +55,7 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
         return data;
     });
 
-    const handleSearch = async () => {
+    const handleSearch = useCallback(async () => {
         if (loading) return;
         setError(null);
         try {
@@ -101,7 +104,36 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
             setError("Error occurred while searching. Please try again.");
             setLoading(false);
         }
-    };
+    }, [loading, topic, pins, currentModel.provider, modelConfig]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                event.key === "Enter" &&
+                !loading &&
+                topic.length > 0 &&
+                pins.length > 0
+            ) {
+                handleSearch();
+            }
+        };
+
+        if (Panel.current && Panel.current.getSize() > 1) {
+            if (inputRef.current) {
+                inputRef.current.focus();
+            }
+            window.addEventListener("keydown", handleKeyDown);
+        } else {
+            if (inputRef.current) {
+                inputRef.current.blur();
+            }
+            window.removeEventListener("keydown", handleKeyDown);
+        }
+
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [loading, topic, pins, handleSearch, Panel]);
 
     useEffect(() => {
         if (!worker.current) {
@@ -136,6 +168,7 @@ export default function ChatPanel({ Pins }: { Pins: pin[] }) {
 
             <div className="flex items-center">
                 <Input
+                    ref={inputRef}
                     className="flex-grow mr-2"
                     value={topic}
                     onChange={(e) => setTopic(e.target.value)}

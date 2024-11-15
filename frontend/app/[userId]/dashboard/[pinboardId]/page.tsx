@@ -227,7 +227,7 @@ export default function PinboardPage({
                 maxSize={35}
                 ref={panel}
             >
-                <ChatPanel Pins={pins} />
+                <ChatPanel Pins={pins} Panel={panel} />
             </ResizablePanel>
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={99}>

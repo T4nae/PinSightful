@@ -113,7 +113,8 @@ export const drawPins = (
         for (let i = 0; i < pin.videos.length; i++) {
             const img = (pin.videos[i] as content).image!;
             if (img === null) return;
-            if (!img.complete)
+            // check if image is loaded and and not broken
+            if (!img.complete || img.naturalWidth === 0)
                 img.onload = () => {
                     ctx.drawImage(
                         img,
