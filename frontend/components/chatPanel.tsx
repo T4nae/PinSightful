@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo, RefObject } from "react";
+import DOMPurify from "dompurify";
 
 import { useModel } from "@/hooks/useModel";
 import { pin } from "@/actions/pin";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { CircleStopIcon, ForwardIcon } from "lucide-react";
 import { ImperativePanelHandle } from "react-resizable-panels";
+import { markdownToHtml } from "@/lib/markdownToHtml";
 
 export default function ChatPanel({ Pins, Panel }: { Pins: pin[], Panel: RefObject<ImperativePanelHandle> }) {
     const [topic, setTopic] = useState("");
@@ -190,6 +192,8 @@ export default function ChatPanel({ Pins, Panel }: { Pins: pin[], Panel: RefObje
 }
 
 const Bubble = ({ role, text }: { role: "user" | "ai"; text: string }) => {
+    const html = DOMPurify.sanitize(markdownToHtml(text));
+
     return (
         <div
             className={`flex ${
@@ -202,9 +206,8 @@ const Bubble = ({ role, text }: { role: "user" | "ai"; text: string }) => {
                         ? "bg-blue-500 text-white"
                         : "bg-gray-200 text-black"
                 }`}
-            >
-                {text}
-            </div>
+                dangerouslySetInnerHTML={{ __html: html }}
+            />
         </div>
     );
 };
